@@ -12,7 +12,6 @@
           <h2>Alex <span>25</span></h2>
           <div class="choice nope">NOPE</div>
           <div class="choice like">LIKE</div>
-          <div></div>
         </article>
   
         <article>
@@ -20,8 +19,11 @@
           <h2>Lucy <span>31</span></h2>
           <div class="choice nope">NOPE</div>
           <div class="choice like">LIKE</div>
-          <div></div>
         </article>
+        <span>
+          No hay más personas cerca de ti... <br />
+          vuelva a intentarlo más tarde
+        </span>
       </div>
   
       <footer>
@@ -80,17 +82,18 @@
     width: 100%;
     border-radius: 32px;
     display: flex;
-    gap: 24px;
+    gap: 15px;
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    padding: 16px 6px;
+    padding: 20px 6px;
     margin: 20px;
   }
 
   header {
     display: flex;
     justify-content: center;
+    padding: 10px;
   }
 
   header img {
@@ -152,6 +155,16 @@
     margin: 0 auto;
   }
 
+  .cards > span{
+    display: grid;
+    place-content: center;
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+    height: 100%;
+    z-index: -1;
+  }
+
   .cards article {
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
@@ -171,7 +184,7 @@
     transform: translateX(150%) rotate(30deg) !important;
   }
 
-  .cards article.go-left,go-right {
+  .cards article.go-left,.go-right {
     transition: transform .3s ease, rotate .3s ease;
   }
   
@@ -228,7 +241,7 @@
     background: linear-gradient(0deg, #00000088 20%, transparent 40%);
   }
 
-  .cards span {
+  .cards article h2 span {
     margin-left: 4px;
     font-size: 18px;
     line-height: 1.4;
@@ -237,80 +250,90 @@
 </style>
 
 <script>
-  let isAnimating = false;
-  let pullDeltaX = 0;
-  const DECISION_THRESHOLD = 100;
+  const DECISION_THRESHOLD = 75
 
-  function starDrag(e) {
-    if (isAnimating) return;
+  let isAnimating = false
+  let pullDeltaX = 0 
 
-    const actualCard = e.target.closest('article');
-    const startX = e.pageX ?? e.touches[0].pageX;
+  function startDrag(event) {
+    if (isAnimating) return
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onEnd);
+    const actualCard = event.target.closest('article')
+    if (!actualCard) return
 
-    document.addEventListener('touchmove', onMove, { passive: true });
-    document.addEventListener('touchend', onEnd, { passive: true });
+    const startX = event.pageX ?? event.touches[0].pageX
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onEnd)
+
+    document.addEventListener('touchmove', onMove, { passive: true })
+    document.addEventListener('touchend', onEnd, { passive: true })
 
     function onMove(event) {
-      const currentX = event.pageX ?? event.touches[0].pageX;
-      pullDeltaX = currentX - startX;
+      const currentX = event.pageX ?? event.touches[0].pageX
 
-      if (pullDeltaX === 0) return;
+      pullDeltaX = currentX - startX
 
-      isAnimating = true;
-      const deg = pullDeltaX / 14;
-      actualCard.style.transform = `translateX(${pullDeltaX}px) rotate(${deg}deg)`;
-      actualCard.style.cursor = 'grabbing';
+      if (pullDeltaX === 0) return
 
-      const opacity = Math.abs(pullDeltaX) / 100;
-      const isRight = pullDeltaX > 0;
-      const choice = isRight
+      isAnimating = true
+
+      const deg = pullDeltaX / 14
+
+      actualCard.style.transform = `translateX(${pullDeltaX}px) rotate(${deg}deg)`
+
+      actualCard.style.cursor = 'grabbing'
+
+      const opacity = Math.abs(pullDeltaX) / 100
+      const isRight = pullDeltaX > 0
+
+      const choiceEl = isRight
         ? actualCard.querySelector('.choice.like')
-        : actualCard.querySelector('.choice.nope');
+        : actualCard.querySelector('.choice.nope')
 
-      choice.style.opacity = opacity;
+      choiceEl.style.opacity = opacity
     }
 
     function onEnd(event) {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onEnd);
 
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onEnd)
 
-      const decisionMade = Math.abs(pullDeltaX) >= DECISION_THRESHOLD;
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onEnd)
+
+      const decisionMade = Math.abs(pullDeltaX) >= DECISION_THRESHOLD
 
       if (decisionMade) {
-        const goRight = pullDeltaX >= 0;
-        actualCard.classList.add(goRight ? 'go-right' : 'go-left');
-        actualCard.addEventListener('transitionend', () => {
-          actualCard.remove();
-        });
-      } else {
-        actualCard.classList.add('reset');
-        actualCard.classList.remove('go-right', 'go-left');
+        const goRight = pullDeltaX >= 0
 
-        actualCard.querySelectorAll('.choice').forEach((choice) => {
-          choice.style.opacity = 0;
-        });
+        actualCard.classList.add(goRight ? 'go-right' : 'go-left')
+        actualCard.addEventListener('transitionend', () => {
+          actualCard.remove()
+        })
+      } else {
+        actualCard.classList.add('reset')
+        actualCard.classList.remove('go-right', 'go-left')
+
+        actualCard.querySelectorAll('.choice').forEach(choice => {
+          choice.style.opacity = 0
+        })
       }
 
       actualCard.addEventListener('transitionend', () => {
-        actualCard.removeAttribute('style');
-        actualCard.classList.remove('reset');
+        actualCard.removeAttribute('style')
+        actualCard.classList.remove('reset')
 
-        pullDeltaX = 0;
-        isAnimating = false;
-      });
+        pullDeltaX = 0
+        isAnimating = false
+      })
 
-      actualCard.querySelectorAll('.choice').forEach((el) => {
-        el.style.opacity = 0;
-      });
+      actualCard
+        .querySelectorAll(".choice")
+        .forEach((el) => (el.style.opacity = 0));
     }
   }
 
-  document.addEventListener('mousedown', starDrag);
-  document.addEventListener('touchstart', starDrag, { passive: true });
+  document.addEventListener('mousedown', startDrag)
+  document.addEventListener('touchstart', startDrag, { passive: true })
 </script>
